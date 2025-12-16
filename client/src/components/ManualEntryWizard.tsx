@@ -148,14 +148,20 @@ export function ManualEntryWizard({ onNavigate, onAddProducts }: ManualEntryWiza
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome prodotto</Label>
+                  <Label htmlFor="name">
+                    Nome prodotto <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="name"
                     placeholder="Es. Collana con perle"
                     value={currentProduct.name}
                     onChange={(e) => updateCurrentProduct({ name: e.target.value })}
+                    className={currentProduct.name.trim() === "" && currentProduct.category !== "" ? "border-destructive" : ""}
                     data-testid="input-product-name"
                   />
+                  {currentProduct.name.trim() === "" && currentProduct.category !== "" && (
+                    <p className="text-xs text-destructive">Il nome è obbligatorio</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
