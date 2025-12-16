@@ -1,0 +1,132 @@
+Crea una Progressive Web App (PWA) installabile e completamente offline per la gestione di una bancarella di manufatti artigianali (collane, braccialetti, anelli, ecc.).
+
+REQUISITI TECNICI (IMPORTANTE)
+
+Usa HTML + CSS + JavaScript vanilla (oppure un framework leggero se necessario).
+
+Implementa:
+
+service worker per cache offline
+
+manifest.json per installazione PWA
+
+Usa IndexedDB (o localStorage se motivato) per persistenza dati offline.
+
+L’app deve funzionare senza connessione dopo il primo caricamento.
+
+Tutto il codice deve stare in un singolo progetto Replit, pronto per il run.
+
+SCHERMATA DI AVVIO
+
+All’apertura mostra due pulsanti principali:
+
+1) Importa Database
+
+Importazione da file .txt o .csv
+
+Formato semplice, ad esempio:
+
+nome;categoria;prezzo;quantità;immagine
+
+
+Il file contiene tutti i manufatti disponibili per la giornata.
+
+I dati importati vengono salvati localmente.
+
+2) Inserimento Manuale (Wizard)
+
+Interfaccia guidata per aggiungere manufatti:
+
+Nome
+
+Categoria
+
+Prezzo
+
+Quantità iniziale
+
+Immagine (upload o placeholder)
+
+Possibilità di modificare/eliminare prima di iniziare la vendita.
+
+SCHERMATA DI VENDITA (PRINCIPALE)
+
+Griglia con tutti i manufatti e le immagini
+
+Per ogni manufatto mostra:
+
+Nome
+
+Immagine
+
+Quantità disponibile
+
+Contatori giornalieri
+
+Pulsanti per ogni manufatto:
+
++ Venduto
+
+- Venduto
+
++ Creato
+
+- Creato
+
+Logica:
+
+Aggiorna quantità in tempo reale
+
+Mantieni separati:
+
+Quantità iniziale
+
+Quantità venduta
+
+Quantità creata
+
+Quantità finale
+
+FINE GIORNATA – ESPORTAZIONE
+
+Pulsante Esporta Database
+
+Esporta in file .txt o .csv compatibile con l’import
+
+Mostra un avviso persistente se l’utente non ha ancora esportato i dati
+
+UX / UI
+
+UI semplice, grandi pulsanti (uso da bancarella)
+
+Responsive (tablet / smartphone)
+
+Nessuna autenticazione richiesta
+
+OUTPUT ATTESO
+
+Struttura del progetto Replit
+
+File:
+
+index.html
+
+style.css
+
+app.js
+
+service-worker.js
+
+manifest.json
+
+Codice funzionante
+
+Commenti essenziali
+
+Istruzioni rapide per:
+
+Avvio su Replit
+
+Installazione PWA
+
+Uso offline
