@@ -1,18 +1,36 @@
 import { useState } from "react";
-import { Home, Download, Package, Plus, Minus, ShoppingBag, Sparkles } from "lucide-react";
+import { Home, Download, Package, Plus, Minus, ShoppingBag, Sparkles, Pencil, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Product, AppScreen } from "@shared/schema";
 import { exportToCSV, exportDetailedReport, exportFullDatabase, downloadFile } from "@/lib/file-utils";
+
+const CATEGORIES = [
+  "Collane",
+  "Braccialetti",
+  "Anelli",
+  "Orecchini",
+  "Ciondoli",
+  "Accessori",
+  "Altro",
+];
 
 interface SalesScreenProps {
   products: Product[];
@@ -25,9 +43,10 @@ interface SalesScreenProps {
 interface ProductCardProps {
   product: Product;
   onUpdate: (product: Product) => void;
+  onEdit: (product: Product) => void;
 }
 
-function ProductCard({ product, onUpdate }: ProductCardProps) {
+function ProductCard({ product, onUpdate, onEdit }: ProductCardProps) {
   const finalQuantity = product.initialQuantity - product.soldCount + product.createdCount;
   const isLowStock = finalQuantity <= 2 && finalQuantity > 0;
   const isOutOfStock = finalQuantity <= 0;
@@ -84,34 +103,45 @@ function ProductCard({ product, onUpdate }: ProductCardProps) {
               </Badge>
             </div>
 
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">Qty:</span>
-                <span
-                  className={`font-bold text-lg ${
-                    isOutOfStock
-                      ? "text-destructive"
-                      : isLowStock
-                      ? "text-chart-4"
-                      : "text-foreground"
-                  }`}
-                  data-testid={`text-quantity-${product.id}`}
-                >
-                  {finalQuantity}
-                </span>
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Qty:</span>
+                  <span
+                    className={`font-bold text-lg ${
+                      isOutOfStock
+                        ? "text-destructive"
+                        : isLowStock
+                        ? "text-chart-4"
+                        : "text-foreground"
+                    }`}
+                    data-testid={`text-quantity-${product.id}`}
+                  >
+                    {finalQuantity}
+                  </span>
+                </div>
+                {product.soldCount > 0 && (
+                  <div className="flex items-center gap-1 text-primary">
+                    <ShoppingBag className="w-3 h-3" />
+                    <span className="text-xs">{product.soldCount}</span>
+                  </div>
+                )}
+                {product.createdCount > 0 && (
+                  <div className="flex items-center gap-1 text-chart-3">
+                    <Sparkles className="w-3 h-3" />
+                    <span className="text-xs">{product.createdCount}</span>
+                  </div>
+                )}
               </div>
-              {product.soldCount > 0 && (
-                <div className="flex items-center gap-1 text-primary">
-                  <ShoppingBag className="w-3 h-3" />
-                  <span className="text-xs">{product.soldCount}</span>
-                </div>
-              )}
-              {product.createdCount > 0 && (
-                <div className="flex items-center gap-1 text-chart-3">
-                  <Sparkles className="w-3 h-3" />
-                  <span className="text-xs">{product.createdCount}</span>
-                </div>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(product)}
+                className="h-8 w-8"
+                data-testid={`button-edit-${product.id}`}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
@@ -183,10 +213,54 @@ export function SalesScreen({
   hasExported,
 }: SalesScreenProps) {
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    category: "",
+    price: "",
+    initialQuantity: "",
+    image: null as string | null,
+  });
 
   const totalSold = products.reduce((sum, p) => sum + p.soldCount, 0);
   const totalRevenue = products.reduce((sum, p) => sum + p.soldCount * p.price, 0);
   const totalCreated = products.reduce((sum, p) => sum + p.createdCount, 0);
+
+  const handleStartEdit = (product: Product) => {
+    setEditingProduct(product);
+    setEditForm({
+      name: product.name,
+      category: product.category,
+      price: product.price.toString(),
+      initialQuantity: product.initialQuantity.toString(),
+      image: product.image,
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingProduct || !editForm.name.trim()) return;
+    const updated: Product = {
+      ...editingProduct,
+      name: editForm.name.trim(),
+      category: editForm.category,
+      price: parseFloat(editForm.price) || 0,
+      initialQuantity: parseInt(editForm.initialQuantity, 10) || 0,
+      image: editForm.image,
+    };
+    onUpdateProduct(updated);
+    setEditingProduct(null);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEditForm((prev) => ({ ...prev, image: event.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleExportCSV = () => {
     const content = exportToCSV(products, false);
@@ -233,13 +307,23 @@ export function SalesScreen({
             </div>
           </div>
 
-          <Button
-            onClick={() => setShowExportDialog(true)}
-            data-testid="button-export"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Esporta
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onNavigate("manual")}
+              data-testid="button-add-product"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi
+            </Button>
+            <Button
+              onClick={() => setShowExportDialog(true)}
+              data-testid="button-export"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Esporta
+            </Button>
+          </div>
         </div>
 
         {!hasExported && products.some((p) => p.soldCount > 0 || p.createdCount > 0) && (
@@ -283,6 +367,7 @@ export function SalesScreen({
               key={product.id}
               product={product}
               onUpdate={onUpdateProduct}
+              onEdit={handleStartEdit}
             />
           ))}
         </div>
@@ -360,6 +445,133 @@ export function SalesScreen({
           <p className="text-xs text-muted-foreground mt-2">
             Usa "Database completo" per reimportare i prodotti con le immagini
           </p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Prodotto</DialogTitle>
+            <DialogDescription>
+              Modifica i dettagli del prodotto
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">
+                Nome prodotto <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                data-testid="input-edit-name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-category">Categoria</Label>
+              <Select
+                value={editForm.category}
+                onValueChange={(value) => setEditForm((prev) => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger id="edit-category" data-testid="select-edit-category">
+                  <SelectValue placeholder="Seleziona categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-price">Prezzo (€)</Label>
+                <Input
+                  id="edit-price"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={editForm.price}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, price: e.target.value }))}
+                  data-testid="input-edit-price"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-quantity">Quantità iniziale</Label>
+                <Input
+                  id="edit-quantity"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={editForm.initialQuantity}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, initialQuantity: e.target.value }))}
+                  data-testid="input-edit-quantity"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Immagine</Label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="edit-image-upload"
+                  data-testid="input-edit-image"
+                />
+                <label htmlFor="edit-image-upload" className="cursor-pointer">
+                  <div className="w-16 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden">
+                    {editForm.image ? (
+                      <img
+                        src={editForm.image}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </label>
+                {editForm.image && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditForm((prev) => ({ ...prev, image: null }))}
+                    data-testid="button-remove-edit-image"
+                  >
+                    Rimuovi
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditingProduct(null)}
+              className="flex-1"
+              data-testid="button-cancel-edit"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={!editForm.name.trim()}
+              className="flex-1"
+              data-testid="button-save-edit"
+            >
+              Salva
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
