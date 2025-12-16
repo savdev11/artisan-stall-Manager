@@ -27,7 +27,8 @@ export function parseCSV(content: string): ParseResult {
       continue;
     }
 
-    const [name, category, priceStr, quantityStr, image] = parts;
+    const [name, category, priceStr, quantityStr, ...imageParts] = parts;
+    const image = imageParts.join(";");
     
     if (!name) {
       errors.push(`Riga ${lineNum}: nome mancante`);
@@ -55,22 +56,36 @@ export function parseCSV(content: string): ParseResult {
       warnings.push(`Riga ${lineNum}: "${name}" ha quantità 0`);
     }
 
+    let parsedImage: string | null = null;
+    if (image) {
+      if (image.startsWith("data:image/")) {
+        parsedImage = image;
+      } else if (image.startsWith("http")) {
+        parsedImage = image;
+      } else if (image.length > 100 && /^[A-Za-z0-9+/=]+$/.test(image.replace(/\s/g, ""))) {
+        parsedImage = `data:image/png;base64,${image.replace(/\s/g, "")}`;
+      } else if (image.trim()) {
+        parsedImage = image;
+      }
+    }
+
     products.push({
       name,
       category,
       price,
       initialQuantity,
-      image: image || null,
+      image: parsedImage,
     });
   }
 
   return { products, errors, warnings };
 }
 
-export function exportToCSV(products: Product[]): string {
+export function exportToCSV(products: Product[], includeImages: boolean = true): string {
   const lines = products.map((p) => {
     const finalQuantity = p.initialQuantity - p.soldCount + p.createdCount;
-    return `${p.name};${p.category};${p.price};${finalQuantity};${p.image || ""}`;
+    const imageField = includeImages && p.image ? p.image : "";
+    return `${p.name};${p.category};${p.price};${finalQuantity};${imageField}`;
   });
   return lines.join("\n");
 }
@@ -82,6 +97,15 @@ export function exportDetailedReport(products: Product[]): string {
     return `${p.name};${p.category};${p.price};${p.initialQuantity};${p.soldCount};${p.createdCount};${finalQuantity}`;
   });
   return [header, ...lines].join("\n");
+}
+
+export function exportFullDatabase(products: Product[]): string {
+  const lines = products.map((p) => {
+    const finalQuantity = p.initialQuantity - p.soldCount + p.createdCount;
+    const imageData = p.image || "";
+    return `${p.name};${p.category};${p.price};${finalQuantity};${imageData}`;
+  });
+  return lines.join("\n");
 }
 
 export function downloadFile(content: string, filename: string): void {

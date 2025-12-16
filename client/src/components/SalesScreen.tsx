@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Product, AppScreen } from "@shared/schema";
-import { exportToCSV, exportDetailedReport, downloadFile } from "@/lib/file-utils";
+import { exportToCSV, exportDetailedReport, exportFullDatabase, downloadFile } from "@/lib/file-utils";
 
 interface SalesScreenProps {
   products: Product[];
@@ -189,9 +189,17 @@ export function SalesScreen({
   const totalCreated = products.reduce((sum, p) => sum + p.createdCount, 0);
 
   const handleExportCSV = () => {
-    const content = exportToCSV(products);
+    const content = exportToCSV(products, false);
     const date = new Date().toISOString().split("T")[0];
     downloadFile(content, `inventario-${date}.csv`);
+    onExport();
+    setShowExportDialog(false);
+  };
+
+  const handleExportWithImages = () => {
+    const content = exportFullDatabase(products);
+    const date = new Date().toISOString().split("T")[0];
+    downloadFile(content, `database-completo-${date}.csv`);
     onExport();
     setShowExportDialog(false);
   };
@@ -321,23 +329,37 @@ export function SalesScreen({
             </div>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <div className="space-y-2">
             <Button
               variant="outline"
               onClick={handleExportCSV}
-              className="flex-1"
+              className="w-full justify-start"
               data-testid="button-export-csv"
             >
-              Esporta Inventario
+              <Download className="w-4 h-4 mr-2" />
+              Inventario (senza immagini)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportWithImages}
+              className="w-full justify-start"
+              data-testid="button-export-with-images"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Database completo (con immagini)
             </Button>
             <Button
               onClick={handleExportReport}
-              className="flex-1"
+              className="w-full justify-start"
               data-testid="button-export-report"
             >
-              Esporta Report Dettagliato
+              <Download className="w-4 h-4 mr-2" />
+              Report vendite dettagliato
             </Button>
-          </DialogFooter>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Usa "Database completo" per reimportare i prodotti con le immagini
+          </p>
         </DialogContent>
       </Dialog>
     </div>
