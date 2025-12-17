@@ -1,5 +1,6 @@
-import { Upload, PenLine, Package } from "lucide-react";
+import { Upload, PenLine, Package, Settings } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { AppScreen } from "@shared/schema";
 
 interface HomeScreenProps {
@@ -10,6 +11,16 @@ interface HomeScreenProps {
 export function HomeScreen({ onNavigate, hasProducts }: HomeScreenProps) {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="absolute top-4 right-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onNavigate("settings")}
+          data-testid="button-settings"
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
+      </div>
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8 md:mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-primary/10 rounded-full mb-4">

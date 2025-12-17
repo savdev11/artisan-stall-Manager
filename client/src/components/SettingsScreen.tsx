@@ -67,7 +67,7 @@ export function SettingsScreen({
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Gestisci le categorie disponibili per i tuoi prodotti. Puoi aggiungere, rimuovere o riordinare le categorie.
+              Gestisci le categorie disponibili per i tuoi prodotti. Puoi aggiungere o rimuovere le categorie.
             </p>
 
             <div className="flex gap-2">

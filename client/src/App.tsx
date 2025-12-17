@@ -5,6 +5,7 @@ import { HomeScreen } from "@/components/HomeScreen";
 import { ImportWizard } from "@/components/ImportWizard";
 import { ManualEntryWizard } from "@/components/ManualEntryWizard";
 import { SalesScreen } from "@/components/SalesScreen";
+import { SettingsScreen } from "@/components/SettingsScreen";
 import {
   getAllProducts,
   importProducts,
@@ -14,33 +15,39 @@ import {
   getMetadata,
 } from "@/lib/indexeddb";
 import type { Product, InsertProduct, AppScreen } from "@shared/schema";
+import { DEFAULT_CATEGORIES } from "@shared/schema";
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("home");
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
   const [hasExported, setHasExported] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    async function loadProducts() {
+    async function loadData() {
       try {
         const storedProducts = await getAllProducts();
         setProducts(storedProducts);
         const exported = await getMetadata<boolean>("hasExported");
         setHasExported(exported ?? true);
+        const storedCategories = await getMetadata<string[]>("categories");
+        if (storedCategories !== null) {
+          setCategories(storedCategories);
+        }
       } catch (error) {
-        console.error("Failed to load products:", error);
+        console.error("Failed to load data:", error);
         toast({
           title: "Errore",
-          description: "Impossibile caricare i prodotti",
+          description: "Impossibile caricare i dati",
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
     }
-    loadProducts();
+    loadData();
   }, [toast]);
 
   useEffect(() => {
@@ -143,6 +150,27 @@ function App() {
     });
   }, [toast]);
 
+  const handleUpdateCategories = useCallback(
+    async (newCategories: string[]) => {
+      try {
+        setCategories(newCategories);
+        await setMetadata("categories", newCategories);
+        toast({
+          title: "Categorie aggiornate",
+          description: "Le modifiche sono state salvate",
+        });
+      } catch (error) {
+        console.error("Failed to update categories:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile salvare le categorie",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -169,6 +197,7 @@ function App() {
         <ManualEntryWizard
           onNavigate={handleNavigate}
           onAddProducts={handleAddProducts}
+          categories={categories}
         />
       )}
       {currentScreen === "sales" && (
@@ -178,6 +207,14 @@ function App() {
           onNavigate={handleNavigate}
           onExport={handleExport}
           hasExported={hasExported}
+          categories={categories}
+        />
+      )}
+      {currentScreen === "settings" && (
+        <SettingsScreen
+          categories={categories}
+          onUpdateCategories={handleUpdateCategories}
+          onNavigate={handleNavigate}
         />
       )}
       <Toaster />

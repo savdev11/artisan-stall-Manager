@@ -16,17 +16,8 @@ import type { InsertProduct, AppScreen } from "@shared/schema";
 interface ManualEntryWizardProps {
   onNavigate: (screen: AppScreen) => void;
   onAddProducts: (products: InsertProduct[]) => void;
+  categories: string[];
 }
-
-const CATEGORIES = [
-  "Collane",
-  "Braccialetti",
-  "Anelli",
-  "Orecchini",
-  "Ciondoli",
-  "Accessori",
-  "Altro",
-];
 
 interface ProductDraft {
   id: string;
@@ -46,7 +37,7 @@ const createEmptyDraft = (): ProductDraft => ({
   image: null,
 });
 
-export function ManualEntryWizard({ onNavigate, onAddProducts }: ManualEntryWizardProps) {
+export function ManualEntryWizard({ onNavigate, onAddProducts, categories }: ManualEntryWizardProps) {
   const [products, setProducts] = useState<ProductDraft[]>([createEmptyDraft()]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -88,7 +79,6 @@ export function ManualEntryWizard({ onNavigate, onAddProducts }: ManualEntryWiza
   const isProductValid = (product: ProductDraft): boolean => {
     return (
       product.name.trim() !== "" &&
-      product.category !== "" &&
       parseFloat(product.price) >= 0 &&
       parseInt(product.initialQuantity, 10) >= 0
     );
@@ -174,7 +164,7 @@ export function ManualEntryWizard({ onNavigate, onAddProducts }: ManualEntryWiza
                       <SelectValue placeholder="Seleziona categoria" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((cat) => (
+                      {categories.map((cat: string) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}
                         </SelectItem>

@@ -22,22 +22,13 @@ import {
 import type { Product, AppScreen } from "@shared/schema";
 import { exportToCSV, exportDetailedReport, exportFullDatabase, downloadFile } from "@/lib/file-utils";
 
-const CATEGORIES = [
-  "Collane",
-  "Braccialetti",
-  "Anelli",
-  "Orecchini",
-  "Ciondoli",
-  "Accessori",
-  "Altro",
-];
-
 interface SalesScreenProps {
   products: Product[];
   onUpdateProduct: (product: Product) => void;
   onNavigate: (screen: AppScreen) => void;
   onExport: () => void;
   hasExported: boolean;
+  categories: string[];
 }
 
 interface ProductCardProps {
@@ -211,6 +202,7 @@ export function SalesScreen({
   onNavigate,
   onExport,
   hasExported,
+  categories,
 }: SalesScreenProps) {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -480,7 +472,7 @@ export function SalesScreen({
                   <SelectValue placeholder="Seleziona categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat: string) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
