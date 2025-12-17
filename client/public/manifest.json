@@ -4,8 +4,8 @@
   "description": "Manage your artisan market stall inventory offline",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#16a34a",
+  "background_color": "#f9f6f2",
+  "theme_color": "#c95a28",
   "orientation": "any",
   "icons": [
     {
