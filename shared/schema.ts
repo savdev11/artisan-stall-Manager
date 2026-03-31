@@ -11,7 +11,11 @@ export const productSchema = z.object({
   image: z.string().nullable(),
 });
 
-export const insertProductSchema = productSchema.omit({ id: true, soldCount: true, createdCount: true });
+export const insertProductSchema = productSchema.omit({
+  id: true,
+  soldCount: true,
+  createdCount: true,
+});
 
 export type Product = z.infer<typeof productSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
@@ -33,3 +37,14 @@ export interface AppState {
   hasUnsavedChanges: boolean;
   currentScreen: AppScreen;
 }
+
+export const appBackupSchema = z.object({
+  version: z.literal(1),
+  exportedAt: z.string(),
+  sourceOrigin: z.string(),
+  categories: z.array(z.string()),
+  hasExported: z.boolean().default(true),
+  products: z.array(productSchema),
+});
+
+export type AppBackup = z.infer<typeof appBackupSchema>;

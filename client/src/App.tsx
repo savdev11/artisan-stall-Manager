@@ -13,8 +13,9 @@ import {
   updateProduct,
   setMetadata,
   getMetadata,
+  replaceAllProducts,
 } from "@/lib/indexeddb";
-import type { Product, InsertProduct, AppScreen } from "@shared/schema";
+import type { Product, InsertProduct, AppScreen, AppBackup } from "@shared/schema";
 import { DEFAULT_CATEGORIES } from "@shared/schema";
 
 function App() {
@@ -171,6 +172,34 @@ function App() {
     [toast]
   );
 
+  const handleRestoreBackup = useCallback(
+    async (backup: AppBackup) => {
+      try {
+        await replaceAllProducts(backup.products);
+        await setMetadata("categories", backup.categories);
+        await setMetadata("hasExported", true);
+
+        setProducts(backup.products);
+        setCategories(backup.categories);
+        setHasExported(true);
+        setCurrentScreen("sales");
+
+        toast({
+          title: "Backup ripristinato",
+          description: `${backup.products.length} prodotti caricati dal backup`,
+        });
+      } catch (error) {
+        console.error("Failed to restore backup:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile ripristinare il backup",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -213,7 +242,9 @@ function App() {
       {currentScreen === "settings" && (
         <SettingsScreen
           categories={categories}
+          products={products}
           onUpdateCategories={handleUpdateCategories}
+          onRestoreBackup={handleRestoreBackup}
           onNavigate={handleNavigate}
         />
       )}

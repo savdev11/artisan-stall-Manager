@@ -104,6 +104,28 @@ export async function clearAllProducts(): Promise<void> {
   });
 }
 
+export async function replaceAllProducts(products: Product[]): Promise<void> {
+  const database = await initDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+
+    const clearRequest = store.clear();
+    clearRequest.onerror = () => reject(clearRequest.error);
+
+    clearRequest.onsuccess = () => {
+      for (const product of products) {
+        store.put(product);
+      }
+    };
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
 export async function importProducts(products: InsertProduct[]): Promise<Product[]> {
   await clearAllProducts();
   const imported: Product[] = [];

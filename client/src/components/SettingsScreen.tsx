@@ -1,22 +1,31 @@
-import { useState } from "react";
-import { Home, Plus, Trash2, GripVertical } from "lucide-react";
+import { useRef, useState } from "react";
+import { Home, Plus, Trash2, GripVertical, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { AppScreen } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { buildBackup, parseBackup, serializeBackup } from "@/lib/backup-utils";
+import { downloadFile } from "@/lib/file-utils";
+import type { AppScreen, AppBackup, Product } from "@shared/schema";
 
 interface SettingsScreenProps {
   categories: string[];
+  products: Product[];
   onUpdateCategories: (categories: string[]) => void;
+  onRestoreBackup: (backup: AppBackup) => void;
   onNavigate: (screen: AppScreen) => void;
 }
 
 export function SettingsScreen({
   categories,
+  products,
   onUpdateCategories,
+  onRestoreBackup,
   onNavigate,
 }: SettingsScreenProps) {
   const [newCategory, setNewCategory] = useState("");
+  const restoreInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleAddCategory = () => {
     const trimmed = newCategory.trim();
@@ -34,6 +43,46 @@ export function SettingsScreen({
     if (e.key === "Enter") {
       e.preventDefault();
       handleAddCategory();
+    }
+  };
+
+  const handleExportBackup = () => {
+    const backup = buildBackup(products, categories);
+    const content = serializeBackup(backup);
+    const date = new Date().toISOString().split("T")[0];
+    downloadFile(
+      content,
+      `artisan-stall-backup-${date}.json`,
+      "application/json;charset=utf-8",
+    );
+
+    toast({
+      title: "Backup esportato",
+      description: "File JSON creato. Importalo nel nuovo dominio per migrare i dati.",
+    });
+  };
+
+  const handleBackupFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const content = await file.text();
+      const backup = parseBackup(content);
+      onRestoreBackup(backup);
+    } catch (error) {
+      toast({
+        title: "Backup non valido",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Impossibile leggere il file di backup.",
+        variant: "destructive",
+      });
+    } finally {
+      if (restoreInputRef.current) {
+        restoreInputRef.current.value = "";
+      }
     }
   };
 
@@ -60,7 +109,55 @@ export function SettingsScreen({
         </div>
       </header>
 
-      <main className="p-4 max-w-3xl mx-auto">
+      <main className="p-4 max-w-3xl mx-auto space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Migrazione Dati (Dominio)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              I dati sono salvati nel browser (IndexedDB) e non si trasferiscono automaticamente tra domini diversi.
+              Prima del passaggio dal vecchio dominio Replit al nuovo dominio VPS, esporta un backup JSON e poi importalo nel nuovo dominio.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={handleExportBackup}
+                className="flex-1"
+                data-testid="button-export-backup"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Esporta Backup JSON
+              </Button>
+
+              <input
+                ref={restoreInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleBackupFileChange}
+                className="hidden"
+                id="restore-backup-input"
+                data-testid="input-restore-backup"
+              />
+              <label htmlFor="restore-backup-input" className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-import-backup"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importa Backup JSON
+                </Button>
+              </label>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Il backup JSON conserva prodotti, contatori venduti/creati, immagini e categorie.
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Categorie Prodotti</CardTitle>
